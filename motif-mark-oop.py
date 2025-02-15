@@ -1,14 +1,13 @@
 #!/usr/bin/env python 
 
 # Motif Marker by Wesley Gomersall
-# This program takes fasta and motif.txt inputs and generates a png image
-# with the same name as the input fasta which visualizes motif sequences 
-# as they appear in the fasta-format sequences.
-# Fasta entries must differentiate introns and exons with lower-case and 
-# upper-case bases, respectively. 
+#   This program takes fasta and motif.txt inputs and generates a png image
+#   with the same name as the input fasta which visualizes motif sequences 
+#   as they appear in the fasta-format sequences.
 
 import argparse
 import cairo
+import re
 
 def get_args():
     parser = argparse.ArgumentParser(description="DNA motifs visualized to-scale as they appear in sequences given in fasta file.")
@@ -33,7 +32,7 @@ IUPAC_REGEX = {'A': '[Aa]', 'a': '[Aa]',
                'V': '[AaCcGg]', 'v': '[AaCcGg]',
                'N': '[AaCcTtUuGg]', 'n': '[AaCcTtUuGg]'}
 
-class FastaSequence: # WIP: need to figure out the lengths
+class FastaRecord: # WIP: need to figure out the lengths
     '''Input header line (newline stripped) and entire sequence from each fasta entry.
 
     Attributes: 
@@ -79,10 +78,14 @@ class Motif: # WIP: locate function
             reg = reg + IUPAC_REGEX[char]
         return reg
 
-    def locate(self, sequence): 
+    def locate(self, record: FastaRecord) -> list:
         '''Returns a list of all occurances of self.regex in sequence.
         Locations in sequence are from 1-based index'''
-        pass
+        locations = []
+        # use lookahead to get overlapping matches, loop through matches
+        for match in re.finditer(rf"(?=({self.regex}))", record.sequence): 
+            locations.append(match.start() + 1)
+        return locations
 
 def generate_motif_list(filepath: str) -> list:
     '''Create list of motifs (entries class Motif).'''
@@ -104,8 +107,8 @@ def parse_fasta(filepath: str, list_of_motifs: list) -> list: # WIP: when find_m
         for line in fasta_in:
             if line.startswith('>') or not line:
 
-                if not first: # create FastaSequence and generate lookup table
-                    entry = FastaSequence(header, sequence)
+                if not first: # create FastaRecord and generate lookup table
+                    entry = FastaRecord(header, sequence)
                     find_motifs(entry, list_of_motifs)
                     # coordinates.append(result from find_motifs)
 
@@ -115,14 +118,14 @@ def parse_fasta(filepath: str, list_of_motifs: list) -> list: # WIP: when find_m
             else: 
                 sequence = sequence + line.strip()
 
-        else: # create FastaSequence and generate lookup table
-            entry = FastaSequence(header, sequence)
+        else: # create FastaRecord and generate lookup table
+            entry = FastaRecord(header, sequence)
             find_motifs(entry, list_of_motifs)
             # coordinates.append(result from find_motifs)
 
     # return coordinates
 
-def find_motifs(record: FastaSequence, motifs: list): # WIP 
+def find_motifs(record: FastaRecord, motifs: list): # WIP 
     '''Do something with record and return something else
     Each lookup table in this list is of the form:
         {header: [exonstart, exonend, length],
@@ -183,9 +186,14 @@ if __name__ == "__main__":
     ###########
     # testing #
     ###########
+
     parse_fasta(args.fasta, motif_list ) 
 
     for i, motif in enumerate(motif_list): 
         print(motif.name)
         print(motif.regex)
+        
+    test_record = FastaRecord("test header", "ATCGATCGATCGGGCCCCGGGCGGGG")
+    test_motif = Motif("GGG")
 
+    print(test_motif.locate(test_record))
