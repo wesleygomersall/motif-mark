@@ -32,7 +32,7 @@ IUPAC_REGEX = {'A': '[Aa]', 'a': '[Aa]',
                'V': '[AaCcGg]', 'v': '[AaCcGg]',
                'N': '[AaCcTtUuGg]', 'n': '[AaCcTtUuGg]'}
 
-class FastaRecord: # WIP: need to figure out the lengths
+class FastaRecord: # WIP: need to figure out exontart and exonend
     '''Input header line (newline stripped) and entire sequence from each fasta entry.
 
     Attributes: 
@@ -56,12 +56,13 @@ class FastaRecord: # WIP: need to figure out the lengths
         print(self.header) 
         print(self.sequence)
 
-class Motif: # WIP: locate function
+class Motif:
     '''Take in string for each motif given in input file. 
 
     Attributes: 
         name (str):         Same string as found in input
         regex (str):        Regular expression based on IUPAC codes
+        length (int):       Length of motif sequence
 
     Method(s): 
         convert_regex():    Creates regex from name based on IUPAC codes.
@@ -71,6 +72,7 @@ class Motif: # WIP: locate function
     def __init__(self, given_motif): 
         self.name: str = given_motif.strip()
         self.regex: str = self.convert_to_regex()
+        self.length: int = len(self.name) 
 
     def convert_to_regex(self) -> str:
         reg: str = "" 
@@ -166,6 +168,7 @@ if __name__ == "__main__":
 
     # create list of motifs to iter through (these are of class Motif) 
     motif_list = generate_motif_list(args.motif)
+    num_motifs = len(motif_list) 
 
     # parse fasta, creating a list of lookup tables
     # each dict in list corresponds to what needs to be drawn: 
@@ -175,7 +178,6 @@ if __name__ == "__main__":
     #    ...
     #    motifM: [occurance1, occurance2, ..., occuranceN]} # these lists do not necessarily have the same N
 
-    num_motifs = len(motif_list) 
     # num_records = len(<list from parse_fasta>)
     
     # get M colors based on number of motifs
@@ -193,7 +195,13 @@ if __name__ == "__main__":
         print(motif.name)
         print(motif.regex)
         
-    test_record = FastaRecord("test header", "ATCGATCGATCGGGCCCCGGGCGGGG")
-    test_motif = Motif("GGG")
+    tr = FastaRecord("test header", "GGGATCGATCGATCGGGCCCCGGGCGGGG")
+    tr2 = FastaRecord("test header", "GGGGG")
+    tm = Motif("GGG")
 
-    print(test_motif.locate(test_record))
+    print(f"locating {tm.name} (regex: {tm.regex}) in {tr.sequence}: {tm.locate(tr)}")
+    print(f"locating {tm.name} (regex: {tm.regex}) in {tr2.sequence}: {tm.locate(tr2)}")
+
+    print(f"length of sequence {tr.sequence}: {tr.length}")
+    print(f"length of sequence {tr2.sequence}: {tr2.length}")
+    print(f"length of motif {tm.name}: {tm.length}")
