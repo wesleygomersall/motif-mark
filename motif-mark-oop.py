@@ -333,10 +333,13 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list, png: bool 
                 context.line_to(t, y0 + tick_height)
                 context.stroke()
 
-        # draw motif(s) 
+        # draw motif(s) staggered on y axis
         motif_begin_y = y0 - 0.5 * plot_height
 
-        for motif in motifs: 
+        for m, motif in enumerate(motifs): 
+            motif_begin_y_m = motif_begin_y + m * plot_height / nummotifs
+            motif_end_y_m = motif_begin_y_m + plot_height / nummotifs
+
             if motif.name in record.keys(): 
                 for loc in record[motif.name]: 
                     color = colors[motif.name]
@@ -344,8 +347,8 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list, png: bool 
                     motif_width: float = 4 * len(motif.name) / max_motif_len
                     context.set_line_width(motif_width)
                     context.set_source_rgb(color[0], color[1], color[2]) 
-                    context.move_to(margin_hor_left + record_width * loc * scale, motif_begin_y) 
-                    context.line_to(margin_hor_left + record_width * loc * scale, motif_begin_y + plot_height) 
+                    context.move_to(margin_hor_left + record_width * loc * scale, motif_begin_y_m) 
+                    context.line_to(margin_hor_left + record_width * loc * scale, motif_end_y_m) 
                     context.stroke()
 
     # draw motif-color key
