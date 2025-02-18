@@ -244,6 +244,8 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list, png: bool 
         for key in d.keys():
             if key not in motif_names and d[key][2] > longest_record: 
                 longest_record = d[key][2]
+    
+    scale: float = 1 / longest_record 
                     
     # size of margins and record plots
     record_width: int = 1000
@@ -289,10 +291,9 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list, png: bool 
         for key in record.keys():
             if key not in motif_names:
                 seq_name: str = key
-                scale: float = 1 / longest_record # scale = length of record / longest record
-                tot_len: int = record[key][2]
                 exon_begin = record[key][0]
                 exon_end = record[key][1]
+                tot_len: int = record[key][2]
 
         # draw sequence name
         seq_name_y: int = margin_ver + title_height + 5 + i * record_height
@@ -326,10 +327,10 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list, png: bool 
             tickmarks: list = []
             # for t in range(1, math.ceil(tot_len / mark)): 
             for t in range(1, tot_len // mark + 1): 
-                tickmarks.append(margin_hor_left + record_width * (t * mark) * scale) # NOT CORRECT
+                tickmarks.append(margin_hor_left + record_width * (t * mark) * scale) 
 
             for t in tickmarks: 
-                context.move_to(t, y0 - tick_height) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
+                context.move_to(t, y0 - tick_height) 
                 context.line_to(t, y0 + tick_height)
                 context.stroke()
 
