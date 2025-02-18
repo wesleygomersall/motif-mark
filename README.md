@@ -4,7 +4,7 @@ Generates diagram containing each sequence in input fasta with motifs highlighte
 
 Outputs in .png format. 
 
-[](outputs/Figure_1.png)
+![](outputs/Figure_1.png)
 
 ## Usage
 
