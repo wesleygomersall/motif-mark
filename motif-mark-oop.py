@@ -104,7 +104,13 @@ class Motif:
         return locations
 
 def generate_motif_list(filepath: str) -> list:
-    '''Create list of motifs (entries class Motif).'''
+    '''Create list of motifs (entries class Motif).
+    Input(s): 
+        filepath (str):     String storing file name of input motif file.
+
+    Output(s): 
+        list:               List of Motif objects.
+    '''
     motifs: list = []
     with open(filepath, 'r') as mot_file: 
         for mot in mot_file:
@@ -114,8 +120,15 @@ def generate_motif_list(filepath: str) -> list:
 def parse_fasta(filepath: str, list_of_motifs: list) -> list: 
     '''Loop through fasta file, for each record call function find_motifs()
     Return a list of lookup tables from find_motifs(). 
-    Each element of the list corresponds to a fasta entry.'''
-    
+    Each element of the list corresponds to a fasta entry.
+
+    Input(s): 
+        filepath (str):     String storing file name of input fasta file.
+
+    Output(s): 
+        list:               List of dictionaries output by find_motifs().
+    '''
+
     coordinates: list = []
 
     with open(filepath, 'r') as fasta_in:
@@ -141,58 +154,228 @@ def parse_fasta(filepath: str, list_of_motifs: list) -> list:
 
     return coordinates
 
-def find_motifs(record: FastaRecord, motifs: list):
-    '''Do something with record and return something else
-    Each lookup table in this list is of the form:
-        {header: [exonstart, exonend, length],
-         motif1: [occurance1, occurance2, ..., occuranceN],
-         motif2: [occurance1, occurance2, ..., occuranceN],
-         ...
-         motifM: [occurance1, occurance2, ..., occuranceN]} 
-    these lists do not necessarily have the same N'''
+def find_motifs(rec: FastaRecord, motifs: list) -> dict:
+    '''Parse fasta record, generate dictionary with info about fasta exon and length, 
+    and all motif locations in fasta record.
+
+    Input(s): 
+        rec (FastaRecord):  Fasta record to parse for motif 
+                            sequences.
+        motifs (list):      List of Motifs from generate_motif_list().
+
+    Output(s): 
+        dict:               {header: [exonstart, exonend, length],
+                             motif1: [occurance1, occurance2, ...],
+                             motif2: [occurance1, occurance2, ...],
+                             ...
+                             motifM: [occurance1, occurance2, ...]} 
+    '''
 
     coord_dict: dict = dict()
 
-    coord_dict[record.header] = [record.exonstart, record.exonend, record.length]
+    coord_dict[rec.header] = [rec.exonstart, rec.exonend, rec.length]
     for motif in motifs: 
-        coord_dict[motif.name] = motif.locate(record) 
+        coord_dict[motif.name] = motif.locate(rec) 
     return coord_dict
 
-def get_colors(num_motifs: int) -> list: # WIP
-    '''Generate list of color hex codes based on how many motifs need to be plotted.'''
-    pass
+def get_colors(motifs: dict) -> dict: 
+    '''Generate dictionary of color codes for pycairo based on how many motifs need to be plotted.
 
-def draw(filename: str, coordinates: list, colors: list): # WIP
-    '''Iterate through list of dictionaries. For each, normalize coordinates and cairo draws '''
+    Input(s): 
+        motifs (dict):     Output from generate_motif_list(). 
 
-    # first, determine longest fasta record (header: [2] has this information) 
-    # use longest to normalize the lengths of all subsequent coordinates
-    # maybe this needs to be its own function? 
+    Output(s): 
+        dict:               {motif1: [1, 0, 0, 0]
+                             motif2: [0, 1, 0, 0]
+                             ...
+                             motifM: [w, x, y, z]}
+    '''
 
-    # draw for each record
-    # how to deal with perfectly overlapping motifs? 
+    colors: dict = dict()
+    r = 0; g = 0; b = 0
 
-    # draw motif color key
+    for i, m in enumerate(motifs): 
+        match i % 3:
+            case 0: 
+                r += 1
+            case 1:
+                g += 1
+            case 2: 
+                b += 1
+        if r == g and r == b and r != 0: 
+                r = 0; g = 0
+        color_list = [r, g, b, 0]
+        
+        colors.update({m.name: color_list})
+    return colors
 
-    pass
+def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
+    '''Iterate through list of dictionaries. For each, normalize coordinates and cairo draws 
+
+    Input(s): 
+        filename (str):     String storing output file name.
+        coordinates (list): List of dictionaries output from parse_fasta()/find_motifs().
+                            Each dictionary contains necessary coordinates for 
+                            plotting introns, exon, and motifs for each fasta record.
+        motifs (list):      List of Motif objects obtained from generate_motif_list().
+        colors (dict):      Color dictonary obtained from get_colors().
+
+    Output(s): 
+        null():             Creates .png image of plotted motifs for each fasta record 
+                            in the same figure. Name of file given by filename input.
+    '''
+    
+    # get motif names and thus the number of motifs to plot
+    motif_names: set = set() 
+    max_motif_len: int = 0 
+    for m in motifs: # motifs is list of Motif objects
+        motif_names.add(m.name)
+        if len(m.name) > max_motif_len:
+            max_motif_len = len(m.name)
+    nummotifs: int = len(motif_names) 
+
+    # get number of records and the length of the longest record for normalizing plots
+    numrecords: int = len(coordinates) 
+    longest_record: int = 0 
+    for d in coordinates: # coordinates is a list of dictionaries output from find_motifs/parse_fasta
+        for key in d.keys():
+            if key not in motif_names and d[key][2] > longest_record: 
+                longest_record = d[key][2]
+                    
+    # size of margins and record plots
+    record_width: int = 1000
+    record_height: int = 100 
+    plot_height: float = record_height * .75
+    key_height: int = 25
+    margin_hor_left: int = 25
+    margin_hor_right: int = 25
+    margin_ver: int = 25
+    title_height: int = 50
+    title_size: int = 25
+    label_size: int = 10
+
+    # size of entire plot
+    panel_height: int = 2 * margin_ver + title_height + record_height * numrecords + key_height * nummotifs
+    panel_width: int = margin_hor_right + margin_hor_left + record_width
+
+    surface = cairo.PDFSurface(filename, panel_width, panel_height)
+    context = cairo.Context(surface) 
+
+    context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+    
+    # draw plot title
+    context.set_font_size(title_size) 
+    context.move_to(margin_hor_left, margin_ver + 0.3 * title_height)
+    context.show_text("Motif Plot") 
+
+    # draw each record
+    for i, record in enumerate(coordinates): 
+
+        x0: int = margin_hor_left
+        y0: int = margin_ver + title_height + ((i + 1) - 0.5) * record_height 
+
+        for key in record.keys():
+            if key not in motif_names:
+                seq_name: str = key
+                scale: float = 1 / longest_record # scale = length of record / longest record
+                tot_len: int = record[key][2]
+                exon_begin = record[key][0]
+                exon_end = record[key][1]
+
+        # draw sequence name
+        seq_name_y: int = margin_ver + title_height + 10 + i * record_height
+        context.set_source_rgba(0, 0, 0, 1) # color black
+        context.set_font_size(label_size) 
+        context.move_to(margin_hor_left, seq_name_y)
+        context.show_text(seq_name) 
+        
+        # draw introns (total length of sequence) 
+        intron2_end: float = margin_hor_left + record_width * tot_len * scale 
+
+        context.set_source_rgba(0, 0, 0, 1) # color black
+        context.set_line_width(2) # default line width = 2
+        context.move_to(x0, y0) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
+        context.line_to(intron2_end, y0)
+        context.stroke()
+
+        # draw exon
+        exon_begin_x = margin_hor_left + record_width * exon_begin * scale 
+        exon_end_x = margin_hor_left + record_width * exon_end * scale 
+        exon_begin_y = y0 - 0.5 * plot_height
+
+        context.set_source_rgba(0, 0, 0, 1)
+        context.rectangle(exon_begin_x, exon_begin_y, exon_end_x - exon_begin_x, plot_height) # (x0, y0, width, height)
+        context.fill()
+        
+        # draw ticks 
+        if tot_len > 200:
+            mark: int = 100 # tickmark every N bases
+            tick_height: int = 10
+            tickmarks: list = []
+            # for t in range(1, math.ceil(tot_len / mark)): 
+            for t in range(1, tot_len // mark + 1): 
+                tickmarks.append(margin_hor_left + record_width * (t * mark) * scale) # NOT CORRECT
+
+            for t in tickmarks: 
+                context.move_to(t, y0 - tick_height) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
+                context.line_to(t, y0 + tick_height)
+                context.stroke()
+
+        # draw motif(s) 
+        motif_begin_y = y0 - 0.5 * plot_height
+
+        for motif in motifs: 
+            if motif.name in record.keys(): 
+                for loc in record[motif.name]: 
+                    color = colors[motif.name]
+                    # make line width based on length of motif
+                    motif_width: float = 4 * len(motif.name) / max_motif_len
+                    context.set_line_width(motif_width)
+                    context.set_source_rgb(color[0], color[1], color[2]) 
+                    context.move_to(margin_hor_left + record_width * loc * scale, motif_begin_y) 
+                    context.line_to(margin_hor_left + record_width * loc * scale, motif_begin_y + plot_height) 
+                    context.stroke()
+
+    # draw motif-color key
+    for m, motif in enumerate(motifs): 
+        key_begin_y: int = margin_ver + title_height + record_height * numrecords + 0.5 * key_height
+        
+        # Motif color dashes
+        context.set_line_width(2)
+        color = colors[motif.name]
+        context.set_source_rgb(color[0], color[1], color[2]) 
+        context.move_to(margin_hor_left, key_begin_y + m * key_height) 
+        context.line_to(margin_hor_left + 25, key_begin_y + m * key_height) 
+        context.stroke()
+
+        # Motif names (text)
+        context.set_source_rgba(0, 0, 0, 1) 
+        context.move_to(margin_hor_left + 30, key_begin_y + m * key_height) 
+        context.set_font_size(label_size)
+        context.show_text(motif.name) 
+
+    surface.finish()
 
 if __name__ == "__main__":
     args = get_args()
 
     motif_list = generate_motif_list(args.motif)
-    num_motifs = len(motif_list) 
 
     list_for_draw = parse_fasta(args.fasta, motif_list ) 
 
-    num_records = len(list_for_draw)
+    colors = get_colors(motif_list)
 
-    colors = get_colors(num_motifs)
+    filename = "test.pdf" 
 
-    draw(filename, list_for_draw, colors) 
+    draw(filename, list_for_draw, motif_list, colors) 
 
+    '''
     ###########
     # testing #
     ###########
+
+    for c in colors.items():
+        print(c)
 
     print(num_records)
 
@@ -218,3 +401,4 @@ if __name__ == "__main__":
     print(f"{tr3.sequence}")
     print(f"sequence length: {tr3.length}")
     print(f"exon starts at: {tr3.exonstart}, exon ends at: {tr3.exonend}")
+    '''
