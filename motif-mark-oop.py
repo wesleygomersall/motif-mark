@@ -295,11 +295,11 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list, png: bool 
                 exon_end = record[key][1]
 
         # draw sequence name
-        seq_name_y: int = margin_ver + title_height + 10 + i * record_height
+        seq_name_y: int = margin_ver + title_height + 5 + i * record_height
         context.set_source_rgba(0, 0, 0, 1) # color black
         context.set_font_size(label_size) 
         context.move_to(margin_hor_left, seq_name_y)
-        context.show_text(seq_name) 
+        context.show_text(seq_name.strip('>').split()[0]) 
         
         # draw introns (total length of sequence) 
         intron2_end: float = margin_hor_left + record_width * tot_len * scale 
