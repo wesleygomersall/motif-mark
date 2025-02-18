@@ -284,6 +284,16 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
                 context.stroke()
 
         # draw motif(s) 
+        motif_begin_y = y0 - 0.5 * plot_height
+
+        for motif in motifs: 
+            if motif.name in record.keys(): 
+                for loc in record[motif.name]: 
+                    color = [0, 0, 2, 0] # make this dynamic based on get_colors()
+                    context.set_source_rgb(color[0], color[1], color[2]) 
+                    context.move_to(margin_hor_left + record_width * loc * scale, motif_begin_y) 
+                    context.line_to(margin_hor_left + record_width * loc * scale, motif_begin_y + plot_height) 
+                    context.stroke()
 
     # draw motif color key
 
@@ -293,7 +303,6 @@ if __name__ == "__main__":
     args = get_args()
 
     motif_list = generate_motif_list(args.motif)
-    # num_motifs = len(motif_list) 
 
     list_for_draw = parse_fasta(args.fasta, motif_list ) 
 
