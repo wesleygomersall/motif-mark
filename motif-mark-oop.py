@@ -7,6 +7,7 @@
 
 import argparse
 import cairo
+import math
 import re
 
 def get_args():
@@ -219,12 +220,74 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
             if key not in motif_names and d[key][2] > longest_record: 
                 longest_record = d[key][2]
                     
+    # size of margins and record plots
+    record_width: int = 1000
+    record_height: int = 100 
+    plot_height: float = record_height * .75
+    margin_hor_left: int = 25
+    margin_hor_right: int = 25
+    margin_ver: int = 25
+    title_height: int = 25
+
+    # size of entire plot
+    panel_height: int = 2 * margin_ver + title_height + record_height * numrecords
+    panel_width: int = margin_hor_right + margin_hor_left + record_width
+
+    surface = cairo.PDFSurface(filename, panel_width, panel_height)
+    context = cairo.Context(surface) 
+    
+    # draw plot title
+
     # draw each record
     # how to deal with perfectly overlapping motifs? 
+    for i, record in enumerate(coordinates): 
+
+        x0: int = margin_hor_left
+        y0: int = margin_ver + ((i + 1) - 0.5) * record_height 
+
+        for key in record.keys():
+            if key not in motif_names:
+                scale: float = record[key][2] / longest_record # scale = length of record / longest record
+                tot_len: int = record[key][2]
+                exon_begin = record[key][0]
+                exon_end = record[key][1]
+        
+        # draw introns (total length of sequence) 
+        intron2_end: float = margin_hor_left + record_width * scale 
+
+        context.set_source_rgba(0, 0, 0, 1) # color black
+        context.move_to(x0, y0) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
+        context.line_to(intron2_end, y0)
+        context.stroke()
+
+        # draw exon
+        exon_begin_x = margin_hor_left + exon_begin * scale # NOT CORRECT
+        exon_end_x = margin_hor_left + exon_end * scale # NOT CORRECT
+        exon_begin_y = y0 - 0.5 * plot_height
+
+        context.set_source_rgba(0, 0, 0, 1)
+        context.rectangle(exon_begin_x, exon_begin_y, exon_end_x - exon_begin_x, plot_height) # (x0, y0, width, height)
+        context.fill()
+        
+        # draw ticks 
+        mark: int = 100 # tickmark every N bases
+        tick_height: int = 10
+        tickmarks: list = []
+        for t in range(math.floor(tot_len / mark)): 
+            tickmarks.append(margin_hor_left + (t * mark) * scale) # NOT CORRECT
+            print(scale)
+            print(t * mark)
+
+        for t in tickmarks: 
+            context.move_to(t, y0 - tick_height) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
+            context.line_to(t, y0 + tick_height)
+            context.stroke()
+
+        # draw motif(s) 
 
     # draw motif color key
 
-    pass
+    surface.finish()
 
 if __name__ == "__main__":
     args = get_args()
@@ -238,7 +301,7 @@ if __name__ == "__main__":
 
     colors = get_colors(motif_list)
 
-    filename = "test.png" 
+    filename = "test.pdf" 
 
     draw(filename, list_for_draw, motif_list, colors) 
 
