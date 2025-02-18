@@ -255,6 +255,7 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
     surface = cairo.PDFSurface(filename, panel_width, panel_height)
     context = cairo.Context(surface) 
     
+    # WIP
     # draw plot title
 
     # draw each record
@@ -269,6 +270,9 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
                 tot_len: int = record[key][2]
                 exon_begin = record[key][0]
                 exon_end = record[key][1]
+
+        # WIP
+        # draw sequence name
         
         # draw introns (total length of sequence) 
         intron2_end: float = margin_hor_left + record_width * tot_len * scale 
@@ -314,6 +318,7 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
                     context.line_to(margin_hor_left + record_width * loc * scale, motif_begin_y + plot_height) 
                     context.stroke()
 
+    # WIP
     # draw motif-color key
 
     surface.finish()
