@@ -210,20 +210,22 @@ def get_colors(motifs: dict) -> dict:
         colors.update({m.name: color_list})
     return colors
 
-def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
+def draw(filename: str, coordinates: list, motifs:list, colors: list, png: bool = True): 
     '''Iterate through list of dictionaries. For each, normalize coordinates and cairo draws 
 
     Input(s): 
-        filename (str):     String storing output file name.
+        filename (str):     String storing output file base name.
         coordinates (list): List of dictionaries output from parse_fasta()/find_motifs().
                             Each dictionary contains necessary coordinates for 
                             plotting introns, exon, and motifs for each fasta record.
         motifs (list):      List of Motif objects obtained from generate_motif_list().
         colors (dict):      Color dictonary obtained from get_colors().
+        png (bool):         True/False whether to print to png (True), else print pdf.
 
     Output(s): 
-        null():             Creates .png image of plotted motifs for each fasta record 
-                            in the same figure. Name of file given by filename input.
+        null():             Creates .png (default) or .pdf image of plotted motifs 
+                            for each fasta record in the same figure. 
+                            Base name of file given by filename input.
     '''
     
     # get motif names and thus the number of motifs to plot
@@ -259,8 +261,10 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
     panel_height: int = 2 * margin_ver + title_height + record_height * numrecords + key_height * nummotifs
     panel_width: int = margin_hor_right + margin_hor_left + record_width
 
-    # surface = cairo.PDFSurface(filename, panel_width, panel_height)
-    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, panel_width, panel_height) # for png
+    if png: 
+        surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, panel_width, panel_height) # for png
+    else: 
+        surface = cairo.PDFSurface(filename + ".pdf", panel_width, panel_height) # for pdf
     context = cairo.Context(surface) 
 
     # white background
@@ -362,8 +366,10 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
         context.set_font_size(label_size)
         context.show_text(motif.name) 
 
-    # surface.finish() # for pdf
-    surface.write_to_png(filename)
+    if png: 
+        surface.write_to_png(filename + ".png")
+    else:
+        surface.finish() 
 
 if __name__ == "__main__":
     args = get_args()
@@ -376,38 +382,4 @@ if __name__ == "__main__":
 
     basename = os.path.splitext(os.path.basename(args.fasta))[0]
 
-    draw(basename + ".png", list_for_draw, motif_list, colors) 
-
-    '''
-    ###########
-    # testing #
-    ###########
-
-    for c in colors.items():
-        print(c)
-
-    print(num_records)
-
-    for item in list_for_draw: 
-        print(item) 
-
-    for i, motif in enumerate(motif_list): 
-        print(motif.name)
-        print(motif.regex)
-        
-    tr = FastaRecord("test header", "GGGATCGATCGATCGGGCCCCGGGCGGGG")
-    tr2 = FastaRecord("test header", "GGGGG")
-    tm = Motif("GGG")
-
-    print(f"locating {tm.name} (regex: {tm.regex}) in {tr.sequence}: {tm.locate(tr)}")
-    print(f"locating {tm.name} (regex: {tm.regex}) in {tr2.sequence}: {tm.locate(tr2)}")
-
-    print(f"length of sequence {tr.sequence}: {tr.length}")
-    print(f"length of sequence {tr2.sequence}: {tr2.length}")
-    print(f"length of motif {tm.name}: {tm.length}")
-
-    tr3 = FastaRecord("test header", "atcgATCGccc") 
-    print(f"{tr3.sequence}")
-    print(f"sequence length: {tr3.length}")
-    print(f"exon starts at: {tr3.exonstart}, exon ends at: {tr3.exonend}")
-    '''
+    draw(basename, list_for_draw, motif_list, colors, True) 
