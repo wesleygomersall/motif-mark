@@ -227,8 +227,11 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
     
     # get motif names and thus the number of motifs to plot
     motif_names: set = set() 
+    max_motif_len: int = 0 
     for m in motifs: # motifs is list of Motif objects
         motif_names.add(m.name)
+        if len(m.name) > max_motif_len:
+            max_motif_len = len(m.name)
     nummotifs: int = len(motif_names) 
 
     # get number of records and the length of the longest record for normalizing plots
@@ -243,41 +246,54 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
     record_width: int = 1000
     record_height: int = 100 
     plot_height: float = record_height * .75
+    key_height: int = 25
     margin_hor_left: int = 25
     margin_hor_right: int = 25
     margin_ver: int = 25
-    title_height: int = 25
+    title_height: int = 50
+    title_size: int = 25
+    label_size: int = 10
 
     # size of entire plot
-    panel_height: int = 2 * margin_ver + title_height + record_height * numrecords
+    panel_height: int = 2 * margin_ver + title_height + record_height * numrecords + key_height * nummotifs
     panel_width: int = margin_hor_right + margin_hor_left + record_width
 
     surface = cairo.PDFSurface(filename, panel_width, panel_height)
     context = cairo.Context(surface) 
+
+    context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
     
-    # WIP
     # draw plot title
+    context.set_font_size(title_size) 
+    context.move_to(margin_hor_left, margin_ver + 0.3 * title_height)
+    context.show_text("Motif Plot") 
 
     # draw each record
     for i, record in enumerate(coordinates): 
 
         x0: int = margin_hor_left
-        y0: int = margin_ver + ((i + 1) - 0.5) * record_height 
+        y0: int = margin_ver + title_height + ((i + 1) - 0.5) * record_height 
 
         for key in record.keys():
             if key not in motif_names:
+                seq_name: str = key
                 scale: float = 1 / longest_record # scale = length of record / longest record
                 tot_len: int = record[key][2]
                 exon_begin = record[key][0]
                 exon_end = record[key][1]
 
-        # WIP
         # draw sequence name
+        seq_name_y: int = margin_ver + title_height + 10 + i * record_height
+        context.set_source_rgba(0, 0, 0, 1) # color black
+        context.set_font_size(label_size) 
+        context.move_to(margin_hor_left, seq_name_y)
+        context.show_text(seq_name) 
         
         # draw introns (total length of sequence) 
         intron2_end: float = margin_hor_left + record_width * tot_len * scale 
 
         context.set_source_rgba(0, 0, 0, 1) # color black
+        context.set_line_width(2) # default line width = 2
         context.move_to(x0, y0) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
         context.line_to(intron2_end, y0)
         context.stroke()
@@ -313,13 +329,30 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
                 for loc in record[motif.name]: 
                     color = colors[motif.name]
                     # make line width based on length of motif
+                    motif_width: float = 4 * len(motif.name) / max_motif_len
+                    context.set_line_width(motif_width)
                     context.set_source_rgb(color[0], color[1], color[2]) 
                     context.move_to(margin_hor_left + record_width * loc * scale, motif_begin_y) 
                     context.line_to(margin_hor_left + record_width * loc * scale, motif_begin_y + plot_height) 
                     context.stroke()
 
-    # WIP
     # draw motif-color key
+    for m, motif in enumerate(motifs): 
+        key_begin_y: int = margin_ver + title_height + record_height * numrecords + 0.5 * key_height
+        
+        # Motif color dashes
+        context.set_line_width(2)
+        color = colors[motif.name]
+        context.set_source_rgb(color[0], color[1], color[2]) 
+        context.move_to(margin_hor_left, key_begin_y + m * key_height) 
+        context.line_to(margin_hor_left + 25, key_begin_y + m * key_height) 
+        context.stroke()
+
+        # Motif names (text)
+        context.set_source_rgba(0, 0, 0, 1) 
+        context.move_to(margin_hor_left + 30, key_begin_y + m * key_height) 
+        context.set_font_size(label_size)
+        context.show_text(motif.name) 
 
     surface.finish()
 
@@ -329,8 +362,6 @@ if __name__ == "__main__":
     motif_list = generate_motif_list(args.motif)
 
     list_for_draw = parse_fasta(args.fasta, motif_list ) 
-
-    num_records = len(list_for_draw)
 
     colors = get_colors(motif_list)
 
