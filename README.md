@@ -1,5 +1,7 @@
 # Motif Marker
 
+Created for Bi625, Bioinformatics and Genomics Master's Program at University of Oregon, Winter 2025. 
+
 Generates diagram containing each sequence in input fasta with motifs highlighted. 
 
 Outputs in .png format. 
