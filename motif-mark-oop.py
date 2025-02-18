@@ -158,18 +158,40 @@ def find_motifs(record: FastaRecord, motifs: list):
         coord_dict[motif.name] = motif.locate(record) 
     return coord_dict
 
-def get_colors(num_motifs: int) -> list: # WIP
+def get_colors(motifs: list) -> list: # WIP
     '''Generate list of color hex codes based on how many motifs need to be plotted.'''
     pass
 
-def draw(filename: str, coordinates: list, colors: list): # WIP
-    '''Iterate through list of dictionaries. For each, normalize coordinates and cairo draws '''
+def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
+    '''Iterate through list of dictionaries. For each, normalize coordinates and cairo draws 
 
-    # first, determine longest fasta record (header: [2] has this information) 
-    # use longest to normalize the lengths of all subsequent coordinates
-    # maybe this needs to be its own function? 
+    Input(s): 
+        filename (str):     String storing output file name.
+        coordinates (list): List of dictionaries output from parse_fasta/find_motifs.
+                            Each dictionary contains necessary coordinates for 
+                            plotting introns, exon, and motifs for each fasta record.
+        motifs (list):      List of Motif objects obtained from 
+        colors (int):       List of color lists(?) obtained from get_colors.
 
-    # draw for each record
+    Output(s): 
+        null():             Creates .png image of plotted motifs for each fasta record 
+                            in the same figure. Name of file given by filename input.
+    '''
+    # get motif names and thus the number of motifs to plot
+    motif_names: set = set() 
+    for m in motifs: # motifs is list of Motif objects
+        motif_names.add(m.name)
+    nummotifs: int = len(motif_names) 
+
+    # get number of records and the length of the longest record for normalizing plots
+    numrecords: int = len(coordinates) 
+    longest_record: int = 0 
+    for d in coordinates: # coordinates is a list of dictionaries output from find_motifs/parse_fasta
+        for key in d.keys():
+            if key not in motif_names and d[key][2] > longest_record: 
+                longest_record = d[key][2]
+                    
+    # draw each record
     # how to deal with perfectly overlapping motifs? 
 
     # draw motif color key
@@ -180,24 +202,28 @@ if __name__ == "__main__":
     args = get_args()
 
     motif_list = generate_motif_list(args.motif)
-    num_motifs = len(motif_list) 
+    # num_motifs = len(motif_list) 
 
     list_for_draw = parse_fasta(args.fasta, motif_list ) 
 
     num_records = len(list_for_draw)
 
-    colors = get_colors(num_motifs)
+    colors = get_colors(motif_list)
 
-    draw(filename, list_for_draw, colors) 
+    filename = "test.png" 
+
+    draw(filename, list_for_draw, motif_list, colors) 
 
     ###########
     # testing #
     ###########
 
-    print(num_records)
 
     for item in list_for_draw: 
         print(item) 
+
+    '''
+    print(num_records)
 
     for i, motif in enumerate(motif_list): 
         print(motif.name)
@@ -218,3 +244,4 @@ if __name__ == "__main__":
     print(f"{tr3.sequence}")
     print(f"sequence length: {tr3.length}")
     print(f"exon starts at: {tr3.exonstart}, exon ends at: {tr3.exonend}")
+    '''
