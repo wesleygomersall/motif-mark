@@ -104,7 +104,13 @@ class Motif:
         return locations
 
 def generate_motif_list(filepath: str) -> list:
-    '''Create list of motifs (entries class Motif).'''
+    '''Create list of motifs (entries class Motif).
+    Input(s): 
+        filepath (str):     String storing file name of input motif file.
+
+    Output(s): 
+        list:               List of Motif objects.
+    '''
     motifs: list = []
     with open(filepath, 'r') as mot_file: 
         for mot in mot_file:
@@ -114,8 +120,15 @@ def generate_motif_list(filepath: str) -> list:
 def parse_fasta(filepath: str, list_of_motifs: list) -> list: 
     '''Loop through fasta file, for each record call function find_motifs()
     Return a list of lookup tables from find_motifs(). 
-    Each element of the list corresponds to a fasta entry.'''
-    
+    Each element of the list corresponds to a fasta entry.
+
+    Input(s): 
+        filepath (str):     String storing file name of input fasta file.
+
+    Output(s): 
+        list:               List of dictionaries output by find_motifs().
+    '''
+
     coordinates: list = []
 
     with open(filepath, 'r') as fasta_in:
@@ -142,14 +155,21 @@ def parse_fasta(filepath: str, list_of_motifs: list) -> list:
     return coordinates
 
 def find_motifs(record: FastaRecord, motifs: list):
-    '''Do something with record and return something else
-    Each lookup table in this list is of the form:
-        {header: [exonstart, exonend, length],
-         motif1: [occurance1, occurance2, ..., occuranceN],
-         motif2: [occurance1, occurance2, ..., occuranceN],
-         ...
-         motifM: [occurance1, occurance2, ..., occuranceN]} 
-    these lists do not necessarily have the same N'''
+    '''Parse fasta record, generate dictionary with info about fasta exon and length, 
+    and all motif locations in fasta record.
+
+    Input(s): 
+        record (FastaRecord): Fasta record to parse for motif 
+                              sequences.
+        motifs (list):        List of Motifs from generate_motif_list().
+
+    Output(s): 
+        dict:               {header: [exonstart, exonend, length],
+                             motif1: [occurance1, occurance2, ...],
+                             motif2: [occurance1, occurance2, ...],
+                             ...
+                             motifM: [occurance1, occurance2, ...]} 
+    '''
 
     coord_dict: dict = dict()
 
@@ -159,7 +179,14 @@ def find_motifs(record: FastaRecord, motifs: list):
     return coord_dict
 
 def get_colors(motifs: list) -> list: # WIP
-    '''Generate list of color hex codes based on how many motifs need to be plotted.'''
+    '''Generate list of color hex codes based on how many motifs need to be plotted.
+
+    Input(s): 
+        motifs (list): 
+
+    Output(s): 
+        list: 
+    '''
     pass
 
 def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
@@ -167,16 +194,17 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
 
     Input(s): 
         filename (str):     String storing output file name.
-        coordinates (list): List of dictionaries output from parse_fasta/find_motifs.
+        coordinates (list): List of dictionaries output from parse_fasta()/find_motifs().
                             Each dictionary contains necessary coordinates for 
                             plotting introns, exon, and motifs for each fasta record.
-        motifs (list):      List of Motif objects obtained from 
-        colors (int):       List of color lists(?) obtained from get_colors.
+        motifs (list):      List of Motif objects obtained from generate_motif_list().
+        colors (int):       Color list obtained from get_colors().
 
     Output(s): 
         null():             Creates .png image of plotted motifs for each fasta record 
                             in the same figure. Name of file given by filename input.
     '''
+    
     # get motif names and thus the number of motifs to plot
     motif_names: set = set() 
     for m in motifs: # motifs is list of Motif objects
