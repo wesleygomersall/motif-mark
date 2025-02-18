@@ -7,6 +7,7 @@
 
 import argparse
 import cairo
+import os
 import re
 
 def get_args():
@@ -258,12 +259,19 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
     panel_height: int = 2 * margin_ver + title_height + record_height * numrecords + key_height * nummotifs
     panel_width: int = margin_hor_right + margin_hor_left + record_width
 
-    surface = cairo.PDFSurface(filename, panel_width, panel_height)
+    # surface = cairo.PDFSurface(filename, panel_width, panel_height)
+    surface = cairo.ImageSurface(cairo.FORMAT_ARGB32, panel_width, panel_height) # for png
     context = cairo.Context(surface) 
+
+    # white background
+    context.set_source_rgba(1, 1, 1, 1)
+    context.rectangle(0, 0, panel_width, panel_height)
+    context.fill()
 
     context.select_font_face("Arial", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
     
     # draw plot title
+    context.set_source_rgba(0, 0, 0, 1)
     context.set_font_size(title_size) 
     context.move_to(margin_hor_left, margin_ver + 0.3 * title_height)
     context.show_text("Motif Plot") 
@@ -354,7 +362,8 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
         context.set_font_size(label_size)
         context.show_text(motif.name) 
 
-    surface.finish()
+    # surface.finish() # for pdf
+    surface.write_to_png(filename)
 
 if __name__ == "__main__":
     args = get_args()
@@ -365,9 +374,9 @@ if __name__ == "__main__":
 
     colors = get_colors(motif_list)
 
-    filename = "test.pdf" 
+    basename = os.path.splitext(os.path.basename(args.fasta))[0]
 
-    draw(filename, list_for_draw, motif_list, colors) 
+    draw(basename + ".png", list_for_draw, motif_list, colors) 
 
     '''
     ###########
