@@ -7,7 +7,6 @@
 
 import argparse
 import cairo
-import math
 import re
 
 def get_args():
@@ -179,16 +178,36 @@ def find_motifs(rec: FastaRecord, motifs: list) -> dict:
         coord_dict[motif.name] = motif.locate(rec) 
     return coord_dict
 
-def get_colors(motifs: list) -> list: # WIP
-    '''Generate list of color hex codes based on how many motifs need to be plotted.
+def get_colors(motifs: dict) -> dict: 
+    '''Generate dictionary of color codes for pycairo based on how many motifs need to be plotted.
 
     Input(s): 
-        motifs (list): 
+        motifs (dict):     Output from generate_motif_list(). 
 
     Output(s): 
-        list: 
+        dict:               {motif1: [1, 0, 0, 0]
+                             motif2: [0, 1, 0, 0]
+                             ...
+                             motifM: [w, x, y, z]}
     '''
-    pass
+
+    colors: dict = dict()
+    r = 0; g = 0; b = 0
+
+    for i, m in enumerate(motifs): 
+        match i % 3:
+            case 0: 
+                r += 1
+            case 1:
+                g += 1
+            case 2: 
+                b += 1
+        if r == g and r == b and r != 0: 
+                r = 0; g = 0
+        color_list = [r, g, b, 0]
+        
+        colors.update({m.name: color_list})
+    return colors
 
 def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
     '''Iterate through list of dictionaries. For each, normalize coordinates and cairo draws 
@@ -199,7 +218,7 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
                             Each dictionary contains necessary coordinates for 
                             plotting introns, exon, and motifs for each fasta record.
         motifs (list):      List of Motif objects obtained from generate_motif_list().
-        colors (int):       Color list obtained from get_colors().
+        colors (dict):      Color dictonary obtained from get_colors().
 
     Output(s): 
         null():             Creates .png image of plotted motifs for each fasta record 
@@ -239,7 +258,6 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
     # draw plot title
 
     # draw each record
-    # how to deal with perfectly overlapping motifs? 
     for i, record in enumerate(coordinates): 
 
         x0: int = margin_hor_left
@@ -289,13 +307,14 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
         for motif in motifs: 
             if motif.name in record.keys(): 
                 for loc in record[motif.name]: 
-                    color = [0, 0, 2, 0] # make this dynamic based on get_colors()
+                    color = colors[motif.name]
+                    # make line width based on length of motif
                     context.set_source_rgb(color[0], color[1], color[2]) 
                     context.move_to(margin_hor_left + record_width * loc * scale, motif_begin_y) 
                     context.line_to(margin_hor_left + record_width * loc * scale, motif_begin_y + plot_height) 
                     context.stroke()
 
-    # draw motif color key
+    # draw motif-color key
 
     surface.finish()
 
@@ -314,16 +333,18 @@ if __name__ == "__main__":
 
     draw(filename, list_for_draw, motif_list, colors) 
 
+    '''
     ###########
     # testing #
     ###########
 
+    for c in colors.items():
+        print(c)
+
+    print(num_records)
 
     for item in list_for_draw: 
         print(item) 
-
-    '''
-    print(num_records)
 
     for i, motif in enumerate(motif_list): 
         print(motif.name)
