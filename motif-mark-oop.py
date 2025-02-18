@@ -154,14 +154,14 @@ def parse_fasta(filepath: str, list_of_motifs: list) -> list:
 
     return coordinates
 
-def find_motifs(record: FastaRecord, motifs: list):
+def find_motifs(rec: FastaRecord, motifs: list) -> dict:
     '''Parse fasta record, generate dictionary with info about fasta exon and length, 
     and all motif locations in fasta record.
 
     Input(s): 
-        record (FastaRecord): Fasta record to parse for motif 
-                              sequences.
-        motifs (list):        List of Motifs from generate_motif_list().
+        rec (FastaRecord):  Fasta record to parse for motif 
+                            sequences.
+        motifs (list):      List of Motifs from generate_motif_list().
 
     Output(s): 
         dict:               {header: [exonstart, exonend, length],
@@ -173,9 +173,9 @@ def find_motifs(record: FastaRecord, motifs: list):
 
     coord_dict: dict = dict()
 
-    coord_dict[record.header] = [record.exonstart, record.exonend, record.length]
+    coord_dict[rec.header] = [rec.exonstart, rec.exonend, rec.length]
     for motif in motifs: 
-        coord_dict[motif.name] = motif.locate(record) 
+        coord_dict[motif.name] = motif.locate(rec) 
     return coord_dict
 
 def get_colors(motifs: list) -> list: # WIP
