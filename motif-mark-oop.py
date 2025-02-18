@@ -247,13 +247,13 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
 
         for key in record.keys():
             if key not in motif_names:
-                scale: float = record[key][2] / longest_record # scale = length of record / longest record
+                scale: float = 1 / longest_record # scale = length of record / longest record
                 tot_len: int = record[key][2]
                 exon_begin = record[key][0]
                 exon_end = record[key][1]
         
         # draw introns (total length of sequence) 
-        intron2_end: float = margin_hor_left + record_width * scale 
+        intron2_end: float = margin_hor_left + record_width * tot_len * scale 
 
         context.set_source_rgba(0, 0, 0, 1) # color black
         context.move_to(x0, y0) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
@@ -261,8 +261,8 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
         context.stroke()
 
         # draw exon
-        exon_begin_x = margin_hor_left + exon_begin * scale # NOT CORRECT
-        exon_end_x = margin_hor_left + exon_end * scale # NOT CORRECT
+        exon_begin_x = margin_hor_left + record_width * exon_begin * scale 
+        exon_end_x = margin_hor_left + record_width * exon_end * scale 
         exon_begin_y = y0 - 0.5 * plot_height
 
         context.set_source_rgba(0, 0, 0, 1)
@@ -270,18 +270,18 @@ def draw(filename: str, coordinates: list, motifs:list, colors: list): # WIP
         context.fill()
         
         # draw ticks 
-        mark: int = 100 # tickmark every N bases
-        tick_height: int = 10
-        tickmarks: list = []
-        for t in range(math.floor(tot_len / mark)): 
-            tickmarks.append(margin_hor_left + (t * mark) * scale) # NOT CORRECT
-            print(scale)
-            print(t * mark)
+        if tot_len > 200:
+            mark: int = 100 # tickmark every N bases
+            tick_height: int = 10
+            tickmarks: list = []
+            # for t in range(1, math.ceil(tot_len / mark)): 
+            for t in range(1, tot_len // mark + 1): 
+                tickmarks.append(margin_hor_left + record_width * (t * mark) * scale) # NOT CORRECT
 
-        for t in tickmarks: 
-            context.move_to(t, y0 - tick_height) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
-            context.line_to(t, y0 + tick_height)
-            context.stroke()
+            for t in tickmarks: 
+                context.move_to(t, y0 - tick_height) # (x,y), (0,0) is the top left of the canvas, (width, height) is bottom right
+                context.line_to(t, y0 + tick_height)
+                context.stroke()
 
         # draw motif(s) 
 
