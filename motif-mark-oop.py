@@ -192,19 +192,25 @@ def get_colors(motifs: dict) -> dict:
                              motifM: [w, x, y, z]}
     '''
 
+    if len(motifs) > 6: 
+        print("error, too many motifs")
+
     colors: dict = dict()
-    r = 0; g = 0; b = 0
 
     for i, m in enumerate(motifs): 
-        match i % 3:
+        match i % 6: 
             case 0: 
-                r += 1
-            case 1:
-                g += 1
+                r = 1; g = 0; b = 0 
+            case 1: 
+                r = 0; g = 1; b = 0 
             case 2: 
-                b += 1
-        if r == g and r == b and r != 0: 
-                r = 0; g = 0
+                r = 0; g = 0; b = 1 
+            case 3: 
+                r = 1; g = 0; b = 1 
+            case 4: 
+                r = 0; g = 1; b = 1 
+            case 5: 
+                r = 1; g = 1; b = 0 
         color_list = [r, g, b, 0]
         
         colors.update({m.name: color_list})
